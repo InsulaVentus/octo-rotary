@@ -12,7 +12,7 @@
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%coloredLevel %logger{15} - %message%n%xException{10}</pattern>
+      <pattern>%coloredLevel %logger{15} in %thread - %message%n%xException{10}</pattern>
     </encoder>
   </appender>
 
@@ -29,6 +29,11 @@
 
   <!-- Off these ones as they are annoying, and anyway we manage configuration ourselves -->
   <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
+
+  <logger name="com.hazelcast" level="INFO" additivity="false">
+    <appender-ref ref="ASYNCSTDOUT"/>
+    <appender-ref ref="ASYNCFILE"/>
+  </logger>
 
   <root level="WARN">
     <appender-ref ref="ASYNCFILE" />

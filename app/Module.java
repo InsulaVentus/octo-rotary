@@ -1,5 +1,6 @@
 import com.google.inject.AbstractModule;
 import services.ApplicationTimer;
+import services.DataCluster;
 
 import java.time.Clock;
 
@@ -18,5 +19,6 @@ public class Module extends AbstractModule {
     public void configure() {
         bind(Clock.class).toInstance(Clock.systemDefaultZone());
         bind(ApplicationTimer.class).asEagerSingleton();
+        bind(DataCluster.class).asEagerSingleton();
     }
 }
