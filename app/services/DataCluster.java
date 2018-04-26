@@ -25,5 +25,6 @@ public class DataCluster {
 
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(hazelcastConfig);
         IMap<Object, Object> hmm = instance.getMap("hmm");
+//        hmm.lock
     }
 }
