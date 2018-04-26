@@ -48,5 +48,4 @@ public class ApplicationTimer {
             return CompletableFuture.completedFuture(null);
         });
     }
-
 }
