@@ -1,35 +1,55 @@
 package controllers;
 
+import play.libs.concurrent.HttpExecutionContext;
 import play.mvc.Controller;
 import play.mvc.Result;
 import play.mvc.Results;
-import scala.concurrent.ExecutionContextExecutor;
+import services.DataCluster;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.concurrent.CompletableFuture;
+import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
 @Singleton
 public class AnalyticsController extends Controller {
 
-    private final ExecutionContextExecutor executor;
+    private final HttpExecutionContext executionContext;
+
+    private final DataCluster dataCluster;
 
     private final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger("application");
 
     @Inject
-    public AnalyticsController(ExecutionContextExecutor executor) {
-        this.executor = executor;
+    public AnalyticsController(HttpExecutionContext executionContext, DataCluster dataCluster) {
+        this.executionContext = executionContext;
+        this.dataCluster = dataCluster;
     }
 
     public CompletionStage<Result> analytics() {
+        Map<String, String[]> queryString = request().queryString();
+        StringBuilder stringBuilder = new StringBuilder();
+        for (String key : queryString.keySet()) {
+            stringBuilder.append(String.format("[%s -> %s] ", key, queryString.get(key)[0]));
+        }
+        logger.debug(stringBuilder.toString());
 
-        String timestamps = request().queryString().get("timestamp")[0];
+        return dataCluster.addEvent(getHoursSinceEpoch(queryString), getUser(queryString), getEvent(queryString)).thenApplyAsync(Results::ok, executionContext.current());
+    }
 
-        logger.info(timestamps);
+    private static String getHoursSinceEpoch(final Map<String, String[]> queryString) {
+        return queryString.get("timestamp")[0];
+    }
 
-        CompletableFuture<Result> future = new CompletableFuture<>();
-        future.complete(Results.ok("I come from the future: " + timestamps));
-        return future;
+    private static String getUser(final Map<String, String[]> queryString) {
+        return queryString.get("user")[0];
+    }
+
+    private static String getEvent(final Map<String, String[]> queryString) {
+        if (queryString.containsKey("click")) {
+            return "click";
+        } else {
+            return "impression";
+        }
     }
 }
