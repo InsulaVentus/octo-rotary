@@ -1,5 +1,6 @@
 package controllers;
 
+import models.Events;
 import play.libs.concurrent.HttpExecutionContext;
 import play.mvc.Controller;
 import play.mvc.Result;
@@ -10,6 +11,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
+
+import static java.lang.String.format;
 
 @Singleton
 public class AnalyticsController extends Controller {
@@ -26,18 +29,36 @@ public class AnalyticsController extends Controller {
         this.dataCluster = dataCluster;
     }
 
-    public CompletionStage<Result> analytics() {
+    public CompletionStage<Result> postAnalytics() {
         Map<String, String[]> queryString = request().queryString();
-        StringBuilder stringBuilder = new StringBuilder();
-        for (String key : queryString.keySet()) {
-            stringBuilder.append(String.format("[%s -> %s] ", key, queryString.get(key)[0]));
-        }
-        logger.debug(stringBuilder.toString());
+//        StringBuilder stringBuilder = new StringBuilder();
+//        for (String key : queryString.keySet()) {
+//            stringBuilder.append(format("[%s -> %s] ", key, queryString.get(key)[0]));
+//        }
+        logger.debug(request().toString());
 
-        return dataCluster.addEvent(getHoursSinceEpoch(queryString), getUser(queryString), getEvent(queryString)).thenApplyAsync(Results::ok, executionContext.current());
+        return dataCluster.addEvent(
+                getMillisSinceEpoch(queryString),
+                getUser(queryString),
+                getEvent(queryString)
+        ).thenApplyAsync(
+                aVoid -> Results.ok(),
+                executionContext.current()
+        );
     }
 
-    private static String getHoursSinceEpoch(final Map<String, String[]> queryString) {
+    public CompletionStage<Result> getAnalytics() {
+        return dataCluster.getEvents(
+                getMillisSinceEpoch(request().queryString())
+        ).thenApplyAsync(
+                optionalEvents -> optionalEvents
+                        .map(events -> Results.ok(getPrintableSummary(events)))
+                        .orElseGet(() -> Results.ok(getPrintableSummary(0, 0, 0))),
+                executionContext.current()
+        );
+    }
+
+    private static String getMillisSinceEpoch(final Map<String, String[]> queryString) {
         return queryString.get("timestamp")[0];
     }
 
@@ -51,5 +72,18 @@ public class AnalyticsController extends Controller {
         } else {
             return "impression";
         }
+    }
+
+    private static String getPrintableSummary(Events events) {
+        return getPrintableSummary(events.getUniqueUsers(), events.getClicks(), events.getImpressions());
+    }
+
+    private static String getPrintableSummary(final int uniqueUsers, final int clicks, final int impressions) {
+        return format(
+                "unique_users,%d\nclicks,%d\nimpressions,%d\n",
+                uniqueUsers,
+                clicks,
+                impressions
+        );
     }
 }

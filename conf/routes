@@ -3,7 +3,10 @@
 # ~~~~
 
 # An example controller showing how to write asynchronous code
-GET     /message                    controllers.AsyncController.message
+GET         /message          controllers.AsyncController.message
 
 # POST /analytics?timestamp={millis_since_epoch}&user={username}&{click|impression}
-POST    /analytics                  controllers.AnalyticsController.analytics
+POST        /analytics        controllers.AnalyticsController.postAnalytics
+
+# GET /analytics?timestamp={millis_since_epoch}
+GET         /analytics        controllers.AnalyticsController.getAnalytics

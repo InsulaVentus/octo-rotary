@@ -10,10 +10,10 @@ public class Events implements Serializable {
     private int impressions = 0;
 
     public Events(final String userId, final String event) {
-        add(userId, event);
+        addEvent(userId, event);
     }
 
-    public void add(final String userId, final String event) {
+    public void addEvent(final String userId, final String event) {
         if ("click".equals(event)) {
             clicks++;
         } else {
@@ -22,8 +22,15 @@ public class Events implements Serializable {
         userIds.add(userId);
     }
 
-    @Override
-    public String toString() {
-        return String.format("unique_users,%d\nclicks,%d\nimpressions,%d\n", userIds.size(), clicks, impressions);
+    public int getUniqueUsers() {
+        return userIds.size();
+    }
+
+    public int getClicks() {
+        return clicks;
+    }
+
+    public int getImpressions() {
+        return impressions;
     }
 }

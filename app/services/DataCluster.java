@@ -7,30 +7,28 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.map.AbstractEntryProcessor;
 import models.Events;
-import play.inject.ApplicationLifecycle;
 import play.libs.concurrent.HttpExecutionContext;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Supplier;
+
+import static services.TimestampConverter.toHoursFromEpoch;
 
 @Singleton
 public class DataCluster {
 
     private final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger("application");
 
-    private final ApplicationLifecycle appLifecycle;
-
     private final HttpExecutionContext executionContext;
 
     private final IMap<String, Events> analytics;
 
     @Inject
-    public DataCluster(ApplicationLifecycle applicationLifecycle, HttpExecutionContext executionContext) {
-        this.appLifecycle = applicationLifecycle;
+    public DataCluster(HttpExecutionContext executionContext) {
         this.executionContext = executionContext;
 
         Config hazelcastConfig = new Config();
@@ -40,17 +38,23 @@ public class DataCluster {
         analytics = instance.getMap("analytics");
     }
 
-    public CompletionStage<String> addEvent(final String millisSinceEpoch, final String userName, final String event) {
+    public CompletionStage<Void> addEvent(final String millisSinceEpoch, final String userName, final String event) {
         logger.debug(String.format("Add event: %s - %s - %s", millisSinceEpoch, userName, event));
+        return CompletableFuture.runAsync(
+                () -> {
+                    if (analytics.putIfAbsent(toHoursFromEpoch(millisSinceEpoch), new Events(userName, event)) != null) {
+                        analytics.executeOnKey(toHoursFromEpoch(millisSinceEpoch), new EntryProcessor(userName, event));
+                    }
+                },
+                executionContext.current()
+        );
+    }
 
-        Supplier<String> addEventSupplier = () -> {
-            if (analytics.putIfAbsent(millisSinceEpoch, new Events(userName, event)) != null) {
-                return (String) analytics.executeOnKey(millisSinceEpoch, new EntryProcessor(userName, event));
-            }
-            return Thread.currentThread().getName();
-        };
-
-        return CompletableFuture.supplyAsync(addEventSupplier, executionContext.current());
+    public CompletionStage<Optional<Events>> getEvents(final String millisSinceEpoch) {
+        return CompletableFuture.supplyAsync(
+                () -> Optional.ofNullable(analytics.get(toHoursFromEpoch(millisSinceEpoch))),
+                executionContext.current()
+        );
     }
 
     private static class EntryProcessor extends AbstractEntryProcessor<String, Events> implements Offloadable {
@@ -66,7 +70,7 @@ public class DataCluster {
         @Override
         public Object process(Map.Entry<String, Events> entry) {
             Events currentEvents = entry.getValue();
-            currentEvents.add(userName, event);
+            currentEvents.addEvent(userName, event);
             entry.setValue(currentEvents);
 
             return Thread.currentThread().getName();
