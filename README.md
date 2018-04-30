@@ -1,4 +1,12 @@
-Run application:
+## Event Store
+
+Store and retrieve events from an in-memory data cluster
+
+* Java 1.8
+* Playframework 2.6.13
+* Hazelcast 3.9.3
+
+To run the application:
 ```
 ./sbt run -Dhttp.port=9000
 ```
