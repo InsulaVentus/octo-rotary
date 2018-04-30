@@ -31,12 +31,7 @@ public class AnalyticsController extends Controller {
 
     public CompletionStage<Result> postAnalytics() {
         Map<String, String[]> queryString = request().queryString();
-//        StringBuilder stringBuilder = new StringBuilder();
-//        for (String key : queryString.keySet()) {
-//            stringBuilder.append(format("[%s -> %s] ", key, queryString.get(key)[0]));
-//        }
         logger.debug(request().toString());
-
         return dataCluster.addEvent(
                 getMillisSinceEpoch(queryString),
                 getUser(queryString),
@@ -48,6 +43,7 @@ public class AnalyticsController extends Controller {
     }
 
     public CompletionStage<Result> getAnalytics() {
+        logger.debug(request().toString());
         return dataCluster.getEvents(
                 getMillisSinceEpoch(request().queryString())
         ).thenApplyAsync(
@@ -74,7 +70,7 @@ public class AnalyticsController extends Controller {
         }
     }
 
-    private static String getPrintableSummary(Events events) {
+    private static String getPrintableSummary(final Events events) {
         return getPrintableSummary(events.getUniqueUsers(), events.getClicks(), events.getImpressions());
     }
 

@@ -21,8 +21,6 @@ import static services.TimestampConverter.toHoursFromEpoch;
 @Singleton
 public class DataCluster {
 
-    private final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger("application");
-
     private final HttpExecutionContext executionContext;
 
     private final IMap<String, Events> analytics;
@@ -39,7 +37,6 @@ public class DataCluster {
     }
 
     public CompletionStage<Void> addEvent(final String millisSinceEpoch, final String userName, final String event) {
-        logger.debug(String.format("Add event: %s - %s - %s", millisSinceEpoch, userName, event));
         return CompletableFuture.runAsync(
                 () -> {
                     if (analytics.putIfAbsent(toHoursFromEpoch(millisSinceEpoch), new Events(userName, event)) != null) {
