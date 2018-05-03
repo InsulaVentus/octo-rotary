@@ -1,7 +1,6 @@
 ## Event Store
 
-Store and retrieve events from an in-memory data cluster
-Uses:
+Store and retrieve events from an in-memory data cluster. Made with:
 
 * Java 1.8
 * Playframework 2.6.13
