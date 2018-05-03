@@ -1,0 +1,3 @@
+#!/bin/bash
+
+docker run -dit -p 9000:9000 -p 22:22 -p 5701:5701 --rm analytics-store

@@ -8,6 +8,6 @@ RUN set -x && \
     rm /application/bin/*.bat && \
     mv /application/bin/* /application/bin/start
 
-EXPOSE 22 9000
+EXPOSE 22 9000 5701
 
 CMD /application/bin/start -Dhttp.port=9000 -Dplay.crypto.secret=terces
